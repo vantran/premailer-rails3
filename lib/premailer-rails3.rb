@@ -2,7 +2,7 @@ require 'premailer'
 require 'premailer-rails3/css_loaders'
 require 'premailer-rails3/css_helper'
 require 'premailer-rails3/premailer'
-require 'premailer-rails3/hook'
+require 'premailer-rails3/helpers'
 
 module PremailerRails
   @config = {
@@ -15,4 +15,4 @@ module PremailerRails
   end
 end
 
-ActionMailer::Base.register_interceptor(PremailerRails::Hook)
+ActionMailer::Base.include(PremailerRails::Helpers)
