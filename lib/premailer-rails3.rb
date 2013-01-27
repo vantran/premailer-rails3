@@ -15,4 +15,4 @@ module PremailerRails
   end
 end
 
-ActionMailer::Base.include(PremailerRails::Helpers)
+ActionMailer::Base.send(:include, PremailerRails::Helpers)
