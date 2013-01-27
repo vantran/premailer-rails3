@@ -1,86 +1,36 @@
 # premailer-rails3
 
-[![Build Status](https://secure.travis-ci.org/fphilipe/premailer-rails3.png?branch=master)](http://travis-ci.org/fphilipe/premailer-rails3) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/fphilipe/premailer-rails3)
+I'm sick with premailer-rails3 bugs so I make this fork which
+change the approach. Instead of trying to inject into ActionMailer
+delivery, it simply provide ActionMailer with a helper named
+inline_css(template_name) so you can do something like:
 
-This gem is a no config solution for the wonderful
-[Premailer gem](https://github.com/alexdunae/premailer) to be used with Rails 3.
-It uses interceptors which were introduced in Rails 3 and tweaks all mails which
-are `deliver`ed and adds a plain text part to them and inlines all CSS rules
-into the HTML part.
-
-By default it inlines all the CSS files that are linked to in the HTML:
-
-```html
-<link type='text/css' ... />
+```
+class MyMailer < ActionMailer::Base
+  def reminder
+    mail(to: 'user@email.com', subject: "Hello World with inline CSS")
+    do |format|
+      format.html { inline_css("reminder") }
+    end
+  end
+end
 ```
 
-Don't worry about the host in the CSS URL since this will be ignored.
+The `inline_css` helper do all the hard work: parse the content,
+extract css link and do the sprockets stuff. Kudos to all this
+hardwork goes to the original author fphilipe.
 
-If no CSS file is linked to in the HTML and no inline `<style type="text/css">`
-is present, it will try to load a default CSS file `email.css`.
+As far as I can see, this approach free me from the attachment
+headaches (https://github.com/fphilipe/premailer-rails3/issues/21) and
+the rspec headache (in which rspec won't see email content so it
+cannot verify)
 
-Every CSS file (including the default `email.css`) is loaded from within the
-app. The retrieval of the file depends on your assets configuration:
+Use it at your own risk :)
 
-* Rails 3.1 asset pipeline: It will load the compiled version of the CSS asset
-  which is normally located in `app/assets/stylesheets/`. If the asset can't be
-  found (e.g. it is only available on a CDN and not locally), it will be
-  HTTP requested.
-
-* Classic static assets: It will try to load the CSS file located in
-  `public/stylesheets/`
-
-* [Hassle](https://github.com/pedro/hassle): It will try to load the
-  compiled CSS file located in the default Hassle location
-  `tmp/hassle/stylesheets/`
-
-## Installation
-
-Simply add the gem to your Gemfile in your Rails project:
-
-    gem 'premailer-rails3'
-
-premailer-rails3 requires either nokogiri or hpricot. It doesn't list them as a
-dependency so you can choose which one to use.
-
-    gem 'nokogiri'
-    # or
-    gem 'hpricot'
-
-If both are loaded for some reason, premailer chooses hpricot.
-
-That's it!
-
-## Configuration
-
-Premailer itself accepts a number of options. In order for premailer-rails3 to
-pass these options on to the underlying premailer instance, specify them in an
-initializer:
-
-```ruby
-PremailerRails.config.merge!(:preserve_styles => true,
-                             :remove_ids      => true)
+99.9% of the code is from premailer-rails3 so please refer to the
+original repo https://github.com/fphilipe/premailer-rails3 for
+details document. The only different is how you include it's in
+Gemfile :)
 ```
-
-For a list of options, refer to the [Premailer documentation](http://rubydoc.info/gems/premailer/1.7.3/Premailer:initialize)
-
-The default configs are:
-
-```ruby
-{
-  :input_encoding     => 'UTF-8',
-  :inputencoding      => 'UTF-8',
-  :generate_text_part => true
-}
+  gem 'premailer-rails3', github: 'phuongnd08/premailer-rails3'
 ```
-
-The input encoding option [changed](https://github.com/alexdunae/premailer/commit/5f5cbb4ac181299a7e73d3eca11f3cf546585364)
-at some point. To make sure this option works regardless of the premailer
-version, the old and new setting is specified. If you want to use another
-encoding make sure to specify the right one or both.
-
-If you don't want to generate a text part from the html part, set the config
-`:generate_text_part` to false.
-
-Note that the options `:with_html_string` and `:css_string` are used to make
-this gem work and will thus be overridden.
